@@ -22,26 +22,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   if (process.env.BILIBILI_COOKIE === undefined) {
     res.status(500).json({ error: 'BILIBILI_COOKIE is not set' })
-    return
   } else {
     const { vmid } = req.query
-
-    const response = await fetch(`https://api.bilibili.com/x/relation/followings?vmid=${vmid}`, {
+    const followingURL = new URL(`/x/relation/followings?vmid=${vmid}`,
+      "https://api.bilibili.com")
+    fetch(followingURL, {
       headers: { 'Cookie': process.env.BILIBILI_COOKIE }
-    })
-    const jres = await response.json() as jsonResponse
-    if (jres.code !== 0) {
-      res.status(500).json({ error: jres.message })
-      return
-    }
-    var urls: URL[] = []
-    for (const entry of jres.data.list) {
-      const coinUrl = new URL(`/bilibili/usr/coin/${entry.mid}`, rsshubDomain)
-      const coinResponse = await fetch(coinUrl)
-      if (coinResponse.status === 200) {
-        urls.push(coinUrl)
+    }).then((response) => {
+      if (response.ok) {
+        response.json().then((jres: jsonResponse) => {
+          if (jres.code !== 0) {
+            res.status(500).json(jres)
+          } else {
+            var urls: URL[] = []
+            for (const entry of jres.data.list) {
+              const coinUrl = new URL(`/bilibili/usr/coin/${entry.mid}`,
+                rsshubDomain)
+              fetch(coinUrl).then((coinResponse) => {
+                if (coinResponse.status === 200) {
+                  urls.push(coinUrl)
+                }
+              }).catch((err) => {
+                console.log(err, coinUrl)
+              })
+            }
+            res.status(200).json(urls)
+          }
+        })
+      } else {
+        response.text().then((text) => {
+          res.status(response.status).send(text)
+        })
       }
-    }
-    res.status(200).json(urls)
+    }).catch((err) => {
+      res.status(500).json({ error: err })
+    })
   }
 }
