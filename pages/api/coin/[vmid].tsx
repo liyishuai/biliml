@@ -34,19 +34,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (jres.code !== 0) {
             res.status(500).json(jres)
           } else {
-            var urls: URL[] = []
-            for (const entry of jres.data.list) {
-              const coinUrl = new URL(`/bilibili/usr/coin/${entry.mid}`,
+            var promises: Promise<URL>[] = []
+            jres.data.list.forEach((entry) => {
+              const coinUrl = new URL(`/bilibili/user/coin/${entry.mid}`,
                 rsshubDomain)
-              fetch(coinUrl).then((coinResponse) => {
-                if (coinResponse.status === 200) {
-                  urls.push(coinUrl)
+              promises.push(
+                fetch(coinUrl).then((coinResponse) => {
+                  console.log(coinResponse)
+                  if (coinResponse.ok) {
+                    return coinUrl
+                  } else {
+                    return Promise.reject(coinResponse.statusText)
+                  }
+                }))
+            })
+            var urls: URL[] = []
+            Promise.allSettled(promises).then((results) => {
+              results.forEach((result) => {
+                if (result.status === "fulfilled") {
+                  urls.push(result.value)
                 }
-              }).catch((err) => {
-                console.log(err, coinUrl)
               })
-            }
-            res.status(200).json(urls)
+            }).then(() => {
+              res.status(200).json(urls)
+            })
           }
         })
       } else {
@@ -54,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           res.status(response.status).send(text)
         })
       }
-    }).catch((err) => {
+    }).catch((err: TypeError) => {
       res.status(500).json({ error: err })
     })
   }
