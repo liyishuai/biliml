@@ -36,10 +36,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           } else {
             var urls: URL[] = []
             for (const entry of jres.data.list) {
-              const coinUrl = new URL(`/bilibili/usr/coin/${entry.mid}`,
+              const coinUrl = new URL(`/bilibili/user/coin/${entry.mid}`,
                 rsshubDomain)
               fetch(coinUrl).then((coinResponse) => {
-                if (coinResponse.status === 200) {
+                console.log(coinResponse)
+                if (coinResponse.ok) {
                   urls.push(coinUrl)
                 }
               }).catch((err) => {
