@@ -4,5 +4,5 @@ import { NextApiRequest, NextApiResponse } from 'next'
 export default async function handler(req: NextApiRequest,
   res: NextApiResponse) {
   return generic_handler(req, res, (mid: number) =>
-    `/bilibili/user/coin/${mid}`)
+    `/bilibili/user/like/${mid}`)
 }
