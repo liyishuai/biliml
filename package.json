@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.3.1",
+    "next": "15.3.4",
     "opml": "^0.5.7",
     "react": "^19",
     "react-dom": "^19"
